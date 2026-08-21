@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex | Secure Blockchain Voting</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Premium Animated Background -->
+    <div class="vortex-bg"></div>
+
+    <div class="container">
+        <nav>
+            <div class="logo">VORTEX</div>
+            <div class="nav-links">
+                <div id="nav-user" class="nav-item active" onclick="switchTab('user')">Voter Portal</div>
+                <div id="nav-admin" class="nav-item" onclick="switchTab('admin')">Admin Console</div>
+            </div>
+            <div id="wallet-section">
+                <button id="connectBtn" class="btn-primary" onclick="connectWallet()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" />
+                        <path d="M18 12h4" />
+                    </svg>
+                    Connect Wallet
+                </button>
+                <div id="accountDisplay" class="wallet-info hidden"></div>
+            </div>
+        </nav>
+
+        <!-- User/Voter Dashboard -->
+        <main id="user-dashboard" class="dashboard-section">
+            <div class="glass-card">
+                <div class="flex-between">
+                    <h2>Live Voting Session</h2>
+                    <div id="voting-status-badge" class="status-badge status-ended">Inactive</div>
+                </div>
+
+                <div id="stats-row" class="stats-row hidden">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Turnout</span>
+                        <span id="total-turnout" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Candidates</span>
+                        <span id="total-candidates" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time Remaining</span>
+                        <span id="timer-value" class="stat-value">--:--:--</span>
+                    </div>
+                </div>
+
+                <p id="user-hint" class="text-muted" style="margin-bottom: 2rem;">Please connect your authorized
+                    MetaMask wallet to cast your secure vote.</p>
+
+                <div id="results-container" class="grid">
+                    <!-- Candidates will be loaded here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Admin Dashboard -->
+        <main id="admin-dashboard" class="dashboard-section hidden">
+            <div class="glass-card">
+                <h2>Admin Command Center</h2>
+
+                <div class="admin-controls">
+                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                        <label>Session Duration (Minutes)</label>
+                        <input type="number" id="votingDuration" value="60" min="1">
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="startVotingBtn" class="btn-primary" onclick="startVoting()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Start Session
+                        </button>
+                        <button id="endVotingBtn" class="btn-secondary" onclick="endVoting()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            </svg>
+                            Kill Session
+                        </button>
+                        <button id="resetElectionBtn" class="btn-secondary" onclick="resetElection()"
+                            style="border-color: var(--error); color: var(--error);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                            </svg>
+                            Clear All
+                        </button>
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 4rem;">
+                    <h3 style="margin-bottom: 1.5rem; font-family: 'Outfit';">Register New Candidate</h3>
+                    <div class="glass-card" style="background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 1.5rem;">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="candidateName" placeholder="e.g. Satoshi Nakamoto">
+                        </div>
+                        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Political Party</label>
+                                <input type="text" id="candidateParty" placeholder="e.g. Decentralized Alliance">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Profile Image URL</label>
+                                <input type="url" id="candidateImage" placeholder="https://image-source.com/photo.jpg">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Manifesto / Vision Statement</label>
+                            <textarea id="candidateDetails" rows="3"
+                                placeholder="Describe the candidate's core mission..."></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="addCandidate()" style="width: 100%;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Finalize Registration
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid" style="grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start;">
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 1.5rem; font-family: 'Outfit';">Live Standings</h3>
+                    <div id="admin-results-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Candidates list -->
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 1.5rem; font-family: 'Outfit';">Session Logs</h3>
+                    <div id="admin-logs" class="admin-logs"
+                        style="max-height: 400px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6;">
+                        <div style="color: var(--text-muted)">Awaiting system activity...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div id="status-msg"></div>
+
+        <!-- Winner Modal Layer -->
+        <div id="winner-modal" class="modal-overlay hidden">
+            <div class="winner-card glass-card">
+                <div class="confetti-container"></div>
+                <div style="text-align: center;">
+                    <div class="winner-badge">🏆 ELECTION WINNER</div>
+                    <div id="winner-image-container"></div>
+                    <h1 id="winner-name" style="margin: 1.5rem 0 0.5rem 0; font-size: 3rem;">---</h1>
+                    <div id="winner-party" class="party-badge" style="font-size: 1rem; padding: 0.5rem 1rem;">---</div>
+                    <div class="winner-stats">
+                        <div class="winner-stat">
+                            <span class="label">Total Votes</span>
+                            <span id="winner-votes" class="value">0</span>
+                        </div>
+                        <div class="winner-divider"></div>
+                        <div class="winner-stat">
+                            <span class="label">Vote Share</span>
+                            <span id="winner-percent" class="value">0%</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="closeWinnerModal()"
+                        style="margin-top: 2rem; width: 200px;">Close View</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
