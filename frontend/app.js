@@ -6,28 +6,96 @@ let isAdmin = false;
 let countdownTimer;
 let isModalManuallyClosed = false;
 
-// THE MOST IMPORTANT PART: This address must match your 'deploy.js' output
-// const contractAddress = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
-// const contractAddress = "0x5FbDB2315678afeCb367f032d93F642f64180aa3";
+// After redeploying the updated Voting.sol, paste the new address here.
+// const contractAddress = "0xFa687304D3B8bAb859bE0F5524E19a039ce26f8e";
+// const contractAddress = "0x2C6EAed7055BE88644181444497FD6e9fb4f2A76"; // Make sure to update this!
+const contractAddress = "0xB9D3C09edC36456b13688776a1c06d38501cC0e8"; 
 
-// const contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Hardhat Local Network
-
-// Standard JSON ABI - Updated for Timing, Stats & Reset
 const abi = [
     {
         "inputs": [],
-        "name": "admin",
-        "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
-        "stateMutability": "view",
-        "type": "function"
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+            }
+        ],
+        "name": "CandidateAdded",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "voter",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "candidateIndex",
+                "type": "uint256"
+            }
+        ],
+        "name": "VoteCast",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [],
+        "name": "VotingEnded",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "startTime",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "endTime",
+                "type": "uint256"
+            }
+        ],
+        "name": "VotingStarted",
+        "type": "event"
     },
     {
         "inputs": [
-            { "internalType": "string", "name": "_name", "type": "string" },
-            { "internalType": "string", "name": "_party", "type": "string" },
-            { "internalType": "string", "name": "_imageUrl", "type": "string" },
-            { "internalType": "string", "name": "_details", "type": "string" }
+            {
+                "internalType": "string",
+                "name": "_name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_party",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_imageUrl",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_details",
+                "type": "string"
+            }
         ],
         "name": "addCandidate",
         "outputs": [],
@@ -35,10 +103,81 @@ const abi = [
         "type": "function"
     },
     {
-        "inputs": [{ "internalType": "uint256", "name": "durationInMinutes", "type": "uint256" }],
-        "name": "startVoting",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "inputs": [],
+        "name": "admin",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "candidates",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "party",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "imageUrl",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "details",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "voteCount",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "electionId",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "endTime",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -50,29 +189,35 @@ const abi = [
     },
     {
         "inputs": [],
-        "name": "resetElection",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [{ "internalType": "uint256", "name": "candidateIndex", "type": "uint256" }],
-        "name": "vote",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "getCandidates",
         "outputs": [
             {
                 "components": [
-                    { "internalType": "string", "name": "name", "type": "string" },
-                    { "internalType": "string", "name": "party", "type": "string" },
-                    { "internalType": "string", "name": "imageUrl", "type": "string" },
-                    { "internalType": "string", "name": "details", "type": "string" },
-                    { "internalType": "uint256", "name": "voteCount", "type": "uint256" }
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "party",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "imageUrl",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "details",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "voteCount",
+                        "type": "uint256"
+                    }
                 ],
                 "internalType": "struct Voting.Candidate[]",
                 "name": "",
@@ -86,24 +231,210 @@ const abi = [
         "inputs": [],
         "name": "getVotingStatus",
         "outputs": [
-            { "internalType": "bool", "name": "isActive", "type": "bool" },
-            { "internalType": "address", "name": "admin", "type": "address" },
-            { "internalType": "uint256", "name": "candidateCount", "type": "uint256" },
-            { "internalType": "uint256", "name": "startTime", "type": "uint256" },
-            { "internalType": "uint256", "name": "endTime", "type": "uint256" },
-            { "internalType": "uint256", "name": "totalVotes", "type": "uint256" },
-            { "internalType": "uint256", "name": "electionId", "type": "uint256" }
+            {
+                "internalType": "bool",
+                "name": "isActive",
+                "type": "bool"
+            },
+            {
+                "internalType": "address",
+                "name": "admin",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "candidateCount",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "startTime",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "endTime",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "totalVotes",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "electionId",
+                "type": "uint256"
+            }
         ],
         "stateMutability": "view",
         "type": "function"
     },
     {
         "inputs": [
-            { "internalType": "uint256", "name": "", "type": "uint256" },
-            { "internalType": "address", "name": "", "type": "address" }
+            {
+                "internalType": "uint256",
+                "name": "_electionId",
+                "type": "uint256"
+            }
+        ],
+        "name": "getVoters",
+        "outputs": [
+            {
+                "internalType": "address[]",
+                "name": "",
+                "type": "address[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_electionId",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "_voter",
+                "type": "address"
+            }
+        ],
+        "name": "getVoterAge",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
         ],
         "name": "hasVoted",
-        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "resetElection",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "startTime",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "durationInMinutes",
+                "type": "uint256"
+            }
+        ],
+        "name": "startVoting",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalVotes",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "candidateIndex",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "age",
+                "type": "uint256"
+            }
+        ],
+        "name": "vote",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "voterAge",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "votingActive",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
         "stateMutability": "view",
         "type": "function"
     }
@@ -142,8 +473,9 @@ async function handleConnection(account) {
 
     try {
         const network = await provider.getNetwork();
-        if (parseInt(network.chainId) !== 31337 && parseInt(network.chainId) !== 1337) {
-            showStatus(`Wrong Network! Switch to Hardhat Local (31337).`, "error");
+
+        if (parseInt(network.chainId) !== 11155111) {
+            showStatus(`Wrong Network! Switch to Sepolia Test Network.`, "error");
             return;
         }
 
@@ -266,10 +598,11 @@ async function loadCandidates() {
                 </div>`;
         });
 
-        // Dynamic Locking Logic
+        // Dynamic Locking Logic & Candidate Limit
         const now = Math.floor(Date.now() / 1000);
         const isCurrentlyTiming = status.isActive && now < parseInt(status.endTime);
         const isSessionEnded = status.isActive && now >= parseInt(status.endTime);
+        const maxCandidatesReached = parseInt(status.candidateCount) >= 5;
 
         const registerBtn = document.querySelector('[onclick="addCandidate()"]');
         const startBtn = document.getElementById("startVotingBtn");
@@ -283,7 +616,11 @@ async function loadCandidates() {
                 if (endBtn) { endBtn.disabled = true; endBtn.title = "Wait for timer to end"; }
                 if (resetBtn) resetBtn.disabled = true;
             } else {
-                if (registerBtn) { registerBtn.disabled = false; registerBtn.innerText = "Finalize Registration"; }
+                if (registerBtn) { 
+                    registerBtn.disabled = false; 
+                    registerBtn.innerText = maxCandidatesReached ? "Maximum 5 Candidates Reached" : "Finalize Registration";
+                    if (maxCandidatesReached) registerBtn.disabled = true;
+                }
                 if (startBtn) startBtn.disabled = false;
                 if (endBtn) { endBtn.disabled = false; endBtn.title = ""; }
                 if (resetBtn) resetBtn.disabled = false;
@@ -297,15 +634,47 @@ async function loadCandidates() {
             document.getElementById("winner-modal").classList.add("hidden");
         }
 
+        // Load Voter Ledger (Admin only)
+        if (isAdmin) {
+            loadVoterLedger(status.electionId);
+        }
+
     } catch (err) {
         console.error("Load Task Failed:", err);
+    }
+}
+
+// NEW FEATURE: Fetch and display voter addresses and ages in Admin Console
+async function loadVoterLedger(electionId) {
+    if (!contract) return;
+    try {
+        const voters = await contract.getVoters(electionId);
+        const ledgerContainer = document.getElementById("voter-ledger-container");
+        ledgerContainer.innerHTML = "";
+
+        if (voters.length === 0) {
+            ledgerContainer.innerHTML = '<div style="color: var(--text-muted)">No votes cast yet...</div>';
+            return;
+        }
+
+        for (let i = 0; i < voters.length; i++) {
+            const age = await contract.getVoterAge(electionId, voters[i]);
+            const shortAddr = voters[i].slice(0, 6) + '...' + voters[i].slice(-4);
+            ledgerContainer.innerHTML += `
+                <div style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 0.5rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--glass-border);">
+                    <span style="font-weight: 600; font-size: 0.85rem;">👤 ${shortAddr}</span>
+                    <span style="color: var(--secondary); font-size: 0.85rem; font-weight: 700;">Age: ${age}</span>
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error("Failed to load voter ledger:", err);
     }
 }
 
 function showWinnerOverlay(candidates, totalVotes) {
     if (candidates.length === 0) return;
 
-    // Find the winner (highest voteCount)
     let winner = candidates[0];
     candidates.forEach(c => {
         if (parseInt(c.voteCount) > parseInt(winner.voteCount)) {
@@ -326,7 +695,7 @@ function showWinnerOverlay(candidates, totalVotes) {
         `<div class="candidate-img-placeholder" style="width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--primary); margin: 0 auto;">${winner.name.charAt(0)}</div>`;
 
     document.getElementById("winner-modal").classList.remove("hidden");
-    isModalManuallyClosed = false; // Reset when showing
+    isModalManuallyClosed = false;
 }
 
 function closeWinnerModal() {
@@ -342,7 +711,7 @@ async function resetElection() {
         await tx.wait();
         showStatus("Election Reset Successful!", "success");
         logActivity("Admin reset the entire election");
-        isModalManuallyClosed = false; // Reset flag for new election
+        isModalManuallyClosed = false;
         loadCandidates();
         checkVotingStatus();
     } catch (err) { showStatus("Reset failed", "error"); }
@@ -360,16 +729,35 @@ function logActivity(msg) {
 }
 
 async function vote(index) {
+    const ageInput = prompt("Enter your age. Only voters 18 or older can cast a vote:");
+    if (ageInput === null) return;
+
+    const age = Number(ageInput);
+
+    if (!Number.isInteger(age) || age < 18) {
+        showStatus("You must be 18 or older to vote.", "error");
+        return;
+    }
+
     try {
-        const tx = await contract.vote(index);
+        const tx = await contract.vote(index, age);
         showStatus("Casting vote...", "success");
-        await tx.wait();
-        showStatus("Vote successful!", "success");
-        logActivity(`Voter cast a vote for Candidate #${index}`);
+
+        const receipt = await tx.wait();
+
+        showStatus(`Vote successful! Voter: ${currentAccount}`, "success");
+        logActivity(`Voter ${currentAccount} (age ${age}) voted for Candidate #${index}`);
+
+        // Show exact on-chain voter address from the VoteCast event.
+        const voteEvent = receipt.events?.find((e) => e.event === "VoteCast");
+        if (voteEvent) {
+            logActivity(`On-chain voter address: ${voteEvent.args.voter}`);
+        }
+
         loadCandidates();
     } catch (err) {
         console.error(err);
-        showStatus("Vote failed! Session might have ended or you already voted.", "error");
+        showStatus("Vote failed! Session might have ended, you already voted, or age is under 18.", "error");
     }
 }
 
@@ -394,7 +782,7 @@ async function addCandidate() {
         document.getElementById("candidateDetails").value = "";
     } catch (err) {
         console.error(err);
-        showStatus("Registration failed", "error");
+        showStatus("Registration failed. Max 5 candidates allowed.", "error");
     }
 }
 
@@ -452,7 +840,7 @@ function startCountdown(endTime) {
             clearInterval(countdownTimer);
             document.getElementById("timer-value").innerText = "00:00:00";
             checkVotingStatus();
-            loadCandidates(); // Trigger winner detection
+            loadCandidates();
             return;
         }
 
